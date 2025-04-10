@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Configure axios 
-  axios.defaults.baseURL = 'http://localhost:5000/api';
+  axios.defaults.baseURL = 'https://syncup-backend-p88i.onrender.com/api';
   axios.defaults.withCredentials = true; // For cookies
 
   // Check if user is logged in on page load
