@@ -2,8 +2,6 @@
   "dependencies": {
     "dotenv": "^16.4.7"
   }
-}
-{
   "build": {
     "root": "backend"
   }
