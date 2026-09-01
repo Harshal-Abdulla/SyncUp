@@ -1,0 +1,11 @@
+# Never commit real secrets. Use backend/.env.example as the template and keep
+# the real backend/.env local, or set the values in your host's dashboard.
+.env
+*.env
+!*.env.example
+
+node_modules/
+dist/
+build/
+.DS_Store
+npm-debug.log*
