@@ -1,0 +1,53 @@
+name: Keep the database awake
+
+# MongoDB Atlas M0 pauses a cluster after 60 days with no connections, and a
+# paused cluster means every request to this app fails until someone clicks
+# Resume in the Atlas dashboard. The clock resets on any connection, so this
+# calls the app's health endpoint on a schedule. The endpoint touches the
+# database, which is what actually counts.
+#
+# Runs every 5 days, which is far inside the 60-day window and leaves plenty of
+# slack for a failed run or a quiet fortnight.
+#
+# ▸ Set APP_URL first: Settings > Secrets and variables > Actions > Variables
+#   New repository variable, name APP_URL, value https://your-app.vercel.app
+#
+# ▸ GitHub disables scheduled workflows in a repository with no activity for 60
+#   days. It emails you first, and any push re-enables it. If you would rather
+#   not rely on that, add a second pinger such as UptimeRobot's free tier.
+
+on:
+  schedule:
+    - cron: '0 6 */5 * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the health endpoint
+        run: |
+          if [ -z "${{ vars.APP_URL }}" ]; then
+            echo "APP_URL repository variable is not set. See the comment at the top of this file."
+            exit 1
+          fi
+
+          URL="${{ vars.APP_URL }}/api/health"
+          echo "Pinging $URL"
+
+          # Retry, because the first call after a quiet spell pays a cold start
+          # and Atlas can take a moment to hand back a connection.
+          for attempt in 1 2 3 4 5; do
+            CODE=$(curl -s -o /tmp/body.txt -w '%{http_code}' --max-time 45 "$URL" || echo "000")
+            BODY=$(cat /tmp/body.txt)
+            echo "attempt $attempt: HTTP $CODE  $BODY"
+
+            if [ "$CODE" = "200" ]; then
+              echo "Database reachable. The 60-day idle clock is reset."
+              exit 0
+            fi
+            sleep 15
+          done
+
+          echo "Health check never returned 200. The cluster may be paused, or the app is broken."
+          exit 1
