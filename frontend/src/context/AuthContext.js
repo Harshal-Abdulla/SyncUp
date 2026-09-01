@@ -10,7 +10,10 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   // Configure axios 
-  axios.defaults.baseURL = 'http://localhost:5000/api';
+  // Same origin in production, so a relative path is all that is needed and
+  // there is no API URL to keep in sync. Set REACT_APP_API_URL only when running
+  // the React dev server against an API on a different port.
+  axios.defaults.baseURL = process.env.REACT_APP_API_URL || '/api';
   axios.defaults.withCredentials = true; // For cookies
 
   // Check if user is logged in on page load
